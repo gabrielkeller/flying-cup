@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Uma carta que atravessa o oceano</title>
+    <title>De Estância Velha para Belfast — uma carta</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
@@ -14,7 +14,6 @@
       html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
       .wrap{ max-width:860px; margin: 28px auto; padding: 12px; }
       .paper{ background: var(--paper); border-radius: 18px; padding: 24px; box-shadow: 0 10px 30px rgba(2,6,23,.08); border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
-      /* sutil efeito de papel pautado */
       .paper::before{ content:""; position:absolute; inset:0; background: repeating-linear-gradient( to bottom, transparent, transparent 28px, rgba(14,165,233,.08) 29px ); pointer-events:none; }
       h1{ font-size: clamp(20px, 3.6vw, 30px); margin: 0 0 6px; letter-spacing: .2px; }
       .sub{ color: var(--muted); margin-bottom: 12px; font-size: 14px; }
@@ -27,12 +26,13 @@
       footer{ text-align:center; color:#64748b; font-size:12px; margin: 12px 0 20px; }
       a{ color: var(--accent); text-decoration:none }
       a:hover{ text-decoration:underline }
+      .code{ background:#e2e8f0; border-radius:8px; padding:0 6px; }
     </style>
   </head>
   <body>
     <div class="wrap">
       <div class="paper">
-        <h1 id="title">De São Paulo para Belfast</h1>
+        <h1 id="title">De Estância Velha para Belfast</h1>
         <div class="sub" id="dateLine">Hoje</div>
         <div class="meta" id="meta"></div>
         <div id="map" aria-label="Mapa com origem e destino"></div>
@@ -40,7 +40,7 @@
         <div class="sign" id="sign">— Gabriel</div>
       </div>
       <footer>
-        Página estática e sem edição. Parâmetros opcionais via URL: <code>?from=lat,lng&to=lat,lng&fromName=...&toName=...&letter=...&by=...&date=YYYY-MM-DD</code>.
+        Página estática e sem edição. Parâmetros opcionais: <span class="code">?friend=...&from=lat,lng&to=lat,lng&fromName=...&toName=...&letter=...&by=...&date=YYYY-MM-DD</span>
       </footer>
     </div>
 
@@ -48,30 +48,29 @@
     <script>
       // util
       const $ = (s)=>document.querySelector(s);
-      const fmt = (n)=> n.toFixed(4) + '°';
+      const fmt = (n)=> n.toFixed(4) + '\u00B0';
       const km = (m)=> (m/1000).toFixed(1);
       const toRad = d => d*Math.PI/180;
       function dist(a,b){ const R=6371e3; const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng); const la1=toRad(a.lat), la2=toRad(b.lat); const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2; return 2*R*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)); }
       function pLL(str){ if(!str) return null; const [la,ln]=String(str).split(',').map(s=>parseFloat(s)); if(Number.isFinite(la)&&Number.isFinite(ln)) return {lat:la,lng:ln}; return null; }
       function params(){ const p=new URLSearchParams(location.search);
-        const from = pLL(p.get('from')) || {lat:-23.5505,lng:-46.6333};
-        const to   = pLL(p.get('to'))   || {lat:54.5973,lng:-5.9301};
-        const fromName = p.get('fromName') || 'São Paulo';
+        const from = pLL(p.get('from')) || {lat:-29.650, lng:-51.183}; // Estância Velha (RS)
+        const to   = pLL(p.get('to'))   || {lat:54.5973, lng:-5.9301}; // Belfast (NI)
+        const fromName = p.get('fromName') || 'Estância Velha';
         const toName   = p.get('toName')   || 'Belfast';
+        const friend   = p.get('friend')   || 'Rachel';
         const by       = p.get('by')       || 'Gabriel';
         const dateISO  = p.get('date');
         const letter   = p.get('letter') || (
-`Oi ${toName},
-
-Guardei as coordenadas de onde este presente começou a viagem e de onde ele encontrou um novo lar aí na Irlanda do Norte. Sempre que bater saudade, dá pra olhar o trajeto no mapa e lembrar que a distância é só um detalhe — daqui sigo torcendo por você.
+`Guardei as coordenadas de onde este presente começou a viagem e de onde ele encontrou um novo lar aí na Irlanda do Norte. Sempre que bater saudade, dá pra olhar o trajeto no mapa e lembrar que a distância é só um detalhe — daqui sigo torcendo por você.
 
 Que esta xícara te aqueça nos dias frios e te faça lembrar que tem alguém do outro lado do oceano pensando em você.`);
-        return {from,to,fromName,toName,by,dateISO,letter}; }
+        return {from,to,fromName,toName,friend,by,dateISO,letter}; }
 
-      const {from,to,fromName,toName,by,dateISO,letter} = params();
+      const {from,to,fromName,toName,friend,by,dateISO,letter} = params();
 
       // título + data
-      document.title = `De ${fromName} para ${toName} — Uma carta`;
+      document.title = `De ${fromName} para ${toName} — uma carta`;
       $('#title').textContent = `De ${fromName} para ${toName}`;
       const dt = dateISO ? new Date(dateISO) : new Date();
       try{ $('#dateLine').textContent = dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }); }catch{ $('#dateLine').textContent = 'Hoje'; }
@@ -94,9 +93,8 @@ Que esta xícara te aqueça nos dias frios e te faça lembrar que tem alguém do
       );
 
       // carta
-      const safe = letter.replace(/
-/g,'<br>');
-      $('#letter').innerHTML = `<p>Querida(o) ${toName},</p><p>${safe}</p>`;
+      const safe = letter.replace(/\n/g,'<br>');
+      $('#letter').innerHTML = `<p>Querida ${friend},</p><p>${safe}</p>`;
       $('#sign').textContent = `— ${by}`;
     </script>
   </body>
