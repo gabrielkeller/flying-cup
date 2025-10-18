@@ -1,193 +1,103 @@
 <!doctype html>
-<html lang="en">
+<html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>From Brazil to Northern Ireland — A tiny map with love</title>
-    <!-- Leaflet CSS -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-      crossorigin=""
-    />
+    <title>Uma carta que atravessa o oceano</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Caveat:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <style>
-      :root{
-        --fg:#0f172a; --muted:#475569; --bg:#f8fafc; --brand:#0ea5e9;
-      }
-      html, body { height:100%; margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: var(--bg); color: var(--fg);}      
-      .wrap{ max-width:900px; margin:24px auto; padding: 16px; }
-      h1{ font-size: clamp(18px, 3vw, 28px); margin: 0 0 8px;}
-      p{ margin: 0 0 8px; color: var(--muted);}
-      .card{ background:#fff; border-radius:16px; box-shadow: 0 6px 24px rgba(2,6,23,.08); padding: 14px; }
-      #map{ height: 480px; border-radius:12px; }
-      .row{ display:flex; gap:12px; flex-wrap: wrap; align-items: center; }
-      .field{ display:flex; flex-direction: column; gap:6px; flex:1; min-width:240px; }
-      label{ font-size:12px; color:#334155; letter-spacing:.02em; }
-      input{ border:1px solid #e2e8f0; border-radius:10px; padding:10px 12px; font-size:14px; }
-      .btns{ display:flex; gap:8px; flex-wrap: wrap; margin-top:8px; }
-      button{ cursor:pointer; border:1px solid #0ea5e9; background:#0ea5e9; color:#fff; border-radius:10px; padding:10px 14px; font-weight:600; }
-      button.secondary{ background:#fff; color:#0ea5e9; }
-      .meta{ display:flex; gap:12px; flex-wrap: wrap; font-size:13px; color:#334155; margin-top:8px;}
-      .pill{ background:#f1f5f9; padding:6px 10px; border-radius:999px; }
-      footer{ text-align:center; font-size:12px; color:#64748b; margin:16px 0 32px; }
-      a{ color: var(--brand); text-decoration: none; }
-      a:hover{ text-decoration: underline; }
-      @media (max-width: 600px){ #map{ height: 360px; } }
+      :root{ --bg:#f1f5f9; --paper:#fff; --ink:#0f172a; --muted:#475569; --accent:#0ea5e9; }
+      *{ box-sizing:border-box }
+      html,body{ height:100%; margin:0; background:var(--bg); color:var(--ink); font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+      .wrap{ max-width:860px; margin: 28px auto; padding: 12px; }
+      .paper{ background: var(--paper); border-radius: 18px; padding: 24px; box-shadow: 0 10px 30px rgba(2,6,23,.08); border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+      /* sutil efeito de papel pautado */
+      .paper::before{ content:""; position:absolute; inset:0; background: repeating-linear-gradient( to bottom, transparent, transparent 28px, rgba(14,165,233,.08) 29px ); pointer-events:none; }
+      h1{ font-size: clamp(20px, 3.6vw, 30px); margin: 0 0 6px; letter-spacing: .2px; }
+      .sub{ color: var(--muted); margin-bottom: 12px; font-size: 14px; }
+      .meta{ display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
+      .pill{ background:#f1f5f9; border:1px solid #e2e8f0; color:#334155; border-radius:999px; padding:6px 10px; font-size:12px; }
+      #map{ height: 420px; border-radius: 14px; margin: 6px 0 14px; z-index:1; }
+      .letter{ position:relative; z-index:2; line-height: 1.7; font-size: 16px; }
+      .letter p{ margin: 0 0 12px; }
+      .sign{ font-family: Caveat, cursive; font-size: clamp(22px, 3.4vw, 30px); color:#0b1324; margin-top: 8px; }
+      footer{ text-align:center; color:#64748b; font-size:12px; margin: 12px 0 20px; }
+      a{ color: var(--accent); text-decoration:none }
+      a:hover{ text-decoration:underline }
     </style>
   </head>
   <body>
     <div class="wrap">
-      <div class="card" style="margin-bottom:12px;">
-        <h1>From <span id="fromLabel">São Paulo</span> to <span id="toLabel">Belfast</span></h1>
-        <p id="msg">A little piece of home, now just a scan away.</p>
+      <div class="paper">
+        <h1 id="title">De São Paulo para Belfast</h1>
+        <div class="sub" id="dateLine">Hoje</div>
         <div class="meta" id="meta"></div>
-      </div>
-      <div id="map" class="card" aria-label="Map with origin and destination"></div>
-      <div class="card" style="margin-top:12px;">
-        <div class="row">
-          <div class="field">
-            <label>Origin (lat,lng)</label>
-            <input id="from" value="-23.5505,-46.6333" />
-          </div>
-          <div class="field">
-            <label>Destination (lat,lng)</label>
-            <input id="to" value="54.5973,-5.9301" />
-          </div>
-          <div class="field">
-            <label>Message</label>
-            <input id="message" value="From Brazil to Northern Ireland — with love." />
-          </div>
-        </div>
-        <div class="btns">
-          <button id="update">Update map</button>
-          <button id="share" class="secondary">Copy shareable URL</button>
-        </div>
+        <div id="map" aria-label="Mapa com origem e destino"></div>
+        <div class="letter" id="letter"></div>
+        <div class="sign" id="sign">— Gabriel</div>
       </div>
       <footer>
-        This page is static and privacy‑friendly. You can host it on GitHub Pages / Netlify / Vercel. The share URL includes only the coordinates and message.
+        Página estática e sem edição. Parâmetros opcionais via URL: <code>?from=lat,lng&to=lat,lng&fromName=...&toName=...&letter=...&by=...&date=YYYY-MM-DD</code>.
       </footer>
     </div>
 
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
-      // --- utilities ---
+      // util
       const $ = (s)=>document.querySelector(s);
-      const byId = (id)=>document.getElementById(id);
+      const fmt = (n)=> n.toFixed(4) + '°';
       const km = (m)=> (m/1000).toFixed(1);
-      const haversine = (a,b)=>{ // meters
-        const toRad = d=>d*Math.PI/180;
-        const R = 6371e3;
-        const dLat = toRad(b.lat-a.lat), dLng = toRad(b.lng-a.lng);
-        const la1 = toRad(a.lat), la2 = toRad(b.lat);
-        const sinDLat = Math.sin(dLat/2), sinDLng = Math.sin(dLng/2);
-        const h = sinDLat*sinDLat + Math.cos(la1)*Math.cos(la2)*sinDLng*sinDLng;
-        const c = 2*Math.atan2(Math.sqrt(h), Math.sqrt(1-h));
-        return R*c;
-      }
-      function fmtCoord({lat,lng}){ return `${lat.toFixed(4)}°, ${lng.toFixed(4)}°`; }
-      function placeLabel({lat,lng}){
-        // naive reverse labels for defaults; override via &fromName=&toName=
-        const f = `${lat<0?Math.abs(lat).toFixed(2)+'°S':lat.toFixed(2)+'°N'}, ${lng<0?Math.abs(lng).toFixed(2)+'°W':lng.toFixed(2)+'°E'}`;
-        return f;
-      }
-      function parseLatLng(str){
-        const [la,ln] = String(str).split(',').map(s=>parseFloat(s.trim()));
-        if(Number.isFinite(la) && Number.isFinite(ln)) return {lat:la, lng:ln};
-        return null;
-      }
-      function getParams(){
-        const p = new URLSearchParams(location.search);
-        const from = parseLatLng(p.get('from')) || parseLatLng(byId('from').value);
-        const to = parseLatLng(p.get('to')) || parseLatLng(byId('to').value);
-        const message = p.get('msg') || byId('message').value;
+      const toRad = d => d*Math.PI/180;
+      function dist(a,b){ const R=6371e3; const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng); const la1=toRad(a.lat), la2=toRad(b.lat); const h=Math.sin(dLat/2)**2 + Math.cos(la1)*Math.cos(la2)*Math.sin(dLng/2)**2; return 2*R*Math.atan2(Math.sqrt(h), Math.sqrt(1-h)); }
+      function pLL(str){ if(!str) return null; const [la,ln]=String(str).split(',').map(s=>parseFloat(s)); if(Number.isFinite(la)&&Number.isFinite(ln)) return {lat:la,lng:ln}; return null; }
+      function params(){ const p=new URLSearchParams(location.search);
+        const from = pLL(p.get('from')) || {lat:-23.5505,lng:-46.6333};
+        const to   = pLL(p.get('to'))   || {lat:54.5973,lng:-5.9301};
         const fromName = p.get('fromName') || 'São Paulo';
-        const toName = p.get('toName') || 'Belfast';
-        return {from,to,message,fromName,toName};
-      }
-      function setParams({from,to,message,fromName,toName}){
-        const p = new URLSearchParams();
-        p.set('from', `${from.lat},${from.lng}`);
-        p.set('to', `${to.lat},${to.lng}`);
-        if(message) p.set('msg', message);
-        if(fromName) p.set('fromName', fromName);
-        if(toName) p.set('toName', toName);
-        const url = `${location.origin}${location.pathname}?${p.toString()}`;
-        history.replaceState(null,'',url);
-        return url;
-      }
+        const toName   = p.get('toName')   || 'Belfast';
+        const by       = p.get('by')       || 'Gabriel';
+        const dateISO  = p.get('date');
+        const letter   = p.get('letter') || (
+`Oi ${toName},
 
-      // --- map ---
-      const map = L.map('map', { zoomControl: true });
-      const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19,
-        attribution: '© OpenStreetMap'
-      }).addTo(map);
-      const g = { line:null, fromMarker:null, toMarker:null };
+Guardei as coordenadas de onde este presente começou a viagem e de onde ele encontrou um novo lar aí na Irlanda do Norte. Sempre que bater saudade, dá pra olhar o trajeto no mapa e lembrar que a distância é só um detalhe — daqui sigo torcendo por você.
 
-      function render(){
-        const {from,to,message,fromName,toName} = getParams();
-        if(!from||!to) return;
-        byId('from').value = `${from.lat},${from.lng}`;
-        byId('to').value = `${to.lat},${to.lng}`;
-        byId('message').value = message||'';
-        byId('fromLabel').textContent = fromName || placeLabel(from);
-        byId('toLabel').textContent = toName || placeLabel(to);
-        byId('msg').textContent = message||'';
+Que esta xícara te aqueça nos dias frios e te faça lembrar que tem alguém do outro lado do oceano pensando em você.`);
+        return {from,to,fromName,toName,by,dateISO,letter}; }
 
-        if(g.line){ map.removeLayer(g.line); map.removeLayer(g.fromMarker); map.removeLayer(g.toMarker); }
-        g.fromMarker = L.marker([from.lat, from.lng]).addTo(map).bindPopup(`<b>Origin</b><br>${fromName}<br>${fmtCoord(from)}`);
-        g.toMarker = L.marker([to.lat, to.lng]).addTo(map).bindPopup(`<b>Destination</b><br>${toName}<br>${fmtCoord(to)}`);
-        g.line = L.polyline([[from.lat, from.lng],[to.lat, to.lng]], {weight:4, opacity:0.7}).addTo(map);
-        const bounds = L.latLngBounds([[from.lat, from.lng],[to.lat, to.lng]]).pad(0.35);
-        map.fitBounds(bounds);
+      const {from,to,fromName,toName,by,dateISO,letter} = params();
 
-        const dist = haversine(from,to);
-        const meta = byId('meta');
-        meta.innerHTML = '';
-        const el1 = document.createElement('div'); el1.className='pill'; el1.textContent = `Distance: ${km(dist)} km`;
-        const el2 = document.createElement('div'); el2.className='pill'; el2.textContent = `From: ${fmtCoord(from)}`;
-        const el3 = document.createElement('div'); el3.className='pill'; el3.textContent = `To: ${fmtCoord(to)}`;
-        meta.append(el1, el2, el3);
+      // título + data
+      document.title = `De ${fromName} para ${toName} — Uma carta`;
+      $('#title').textContent = `De ${fromName} para ${toName}`;
+      const dt = dateISO ? new Date(dateISO) : new Date();
+      try{ $('#dateLine').textContent = dt.toLocaleDateString('pt-BR', { day:'2-digit', month:'long', year:'numeric' }); }catch{ $('#dateLine').textContent = 'Hoje'; }
 
-        return setParams({from,to,message,fromName,toName});
-      }
+      // mapa
+      const map = L.map('map', { zoomControl:true });
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '© OpenStreetMap' }).addTo(map);
+      const mFrom = L.marker([from.lat, from.lng]).addTo(map).bindPopup(`<b>Origem</b><br>${fromName}<br>${fmt(from.lat)}, ${fmt(from.lng)}`);
+      const mTo   = L.marker([to.lat, to.lng]).addTo(map).bindPopup(`<b>Destino</b><br>${toName}<br>${fmt(to.lat)}, ${fmt(to.lng)}`);
+      const line  = L.polyline([[from.lat,from.lng],[to.lat,to.lng]], {weight:4, opacity:.75}).addTo(map);
+      map.fitBounds(L.latLngBounds([[from.lat,from.lng],[to.lat,to.lng]]).pad(0.35));
 
-      byId('update').addEventListener('click', ()=>{
-        const from = parseLatLng(byId('from').value);
-        const to = parseLatLng(byId('to').value);
-        const message = byId('message').value;
-        const fromName = byId('fromLabel').textContent;
-        const toName = byId('toLabel').textContent;
-        if(!from||!to) return alert('Use the format: lat,lng');
-        const url = setParams({from,to,message,fromName,toName});
-        render();
-      });
+      // metadados
+      const d = dist(from,to); const meta = $('#meta');
+      function pill(t){ const el=document.createElement('div'); el.className='pill'; el.textContent=t; return el; }
+      meta.append(
+        pill(`Distância: ${km(d)} km`),
+        pill(`De: ${fmt(from.lat)}, ${fmt(from.lng)}`),
+        pill(`Para: ${fmt(to.lat)}, ${fmt(to.lng)}`)
+      );
 
-      byId('share').addEventListener('click', async ()=>{
-        try{
-          await navigator.clipboard.writeText(location.href);
-          alert('URL copied! You can make a QR code with it.');
-        }catch(e){
-          prompt('Copy this URL:', location.href);
-        }
-      });
-
-      // allow quick renaming via double‑click on labels
-      function makeEditable(spanId){
-        const el = byId(spanId);
-        el.style.cursor='text';
-        el.title='Double‑click to edit name';
-        el.addEventListener('dblclick', ()=>{
-          const v = prompt('Type a nicer place name for display:', el.textContent);
-          if(v){ el.textContent = v; render(); }
-        });
-      }
-      makeEditable('fromLabel');
-      makeEditable('toLabel');
-
-      render();
+      // carta
+      const safe = letter.replace(/
+/g,'<br>');
+      $('#letter').innerHTML = `<p>Querida(o) ${toName},</p><p>${safe}</p>`;
+      $('#sign').textContent = `— ${by}`;
     </script>
   </body>
 </html>
